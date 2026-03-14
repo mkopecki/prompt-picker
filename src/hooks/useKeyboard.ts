@@ -19,6 +19,7 @@ interface UseKeyboardParams {
   onSwitchToResults: () => void;
   onRemoveStaged: (path: string) => void;
   onReorder: (from: number, to: number) => void;
+  onClearAll: () => void;
   searchInputRef: React.RefObject<HTMLInputElement | null>;
 }
 
@@ -38,6 +39,7 @@ export function useKeyboard({
   onSwitchToResults,
   onRemoveStaged,
   onReorder,
+  onClearAll,
   searchInputRef,
 }: UseKeyboardParams) {
   useEffect(() => {
@@ -67,6 +69,13 @@ export function useKeyboard({
       if (e.key === "Enter") {
         e.preventDefault();
         onCopyAndClose();
+        return;
+      }
+
+      // Cmd+C: clear all (search + staged items)
+      if (e.key === "c" && e.metaKey) {
+        e.preventDefault();
+        onClearAll();
         return;
       }
 
@@ -167,6 +176,7 @@ export function useKeyboard({
     onSwitchToResults,
     onRemoveStaged,
     onReorder,
+    onClearAll,
     searchInputRef,
   ]);
 }

@@ -1,6 +1,6 @@
 import { Component, useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { load } from "@tauri-apps/plugin-store";
 import {
@@ -341,11 +341,32 @@ function AppContent() {
     onSwitchToResults: () => setFocusContext("results"),
     onRemoveStaged: handleRemoveStaged,
     onReorder: handleReorder,
+    onClearAll: () => {
+      setStagedItems([]);
+      setSearchText("");
+      setChainErrors([]);
+      setFocusContext("results");
+    },
     searchInputRef,
   });
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Resize the Tauri window to match content height
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(() => {
+      const height = Math.min(Math.max(el.scrollHeight, 200), 600);
+      getCurrentWindow().setSize(new LogicalSize(460, height));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="w-[460px] min-h-[200px] max-h-[600px] bg-white dark:bg-neutral-800 rounded-xl border-[0.5px] border-neutral-200/50 dark:border-neutral-700/50 shadow-2xl overflow-hidden flex flex-col">
+    <div ref={containerRef} className="w-[460px] min-h-[200px] max-h-[600px] bg-white dark:bg-neutral-800 rounded-xl border-[0.5px] border-neutral-200/50 dark:border-neutral-700/50 shadow-2xl overflow-hidden flex flex-col">
       <div className="px-3 pt-3">
         <SearchBar
           ref={searchInputRef}

@@ -6,7 +6,7 @@ export default function PreviewPane({ content }: PreviewPaneProps) {
   if (!content) return null;
 
   return (
-    <div className="mx-3 mb-1">
+    <div className="mx-3 mt-2 mb-1">
       <div className="relative rounded-md bg-neutral-50 dark:bg-neutral-700/50 px-2.5 py-2 max-h-[60px] overflow-hidden">
         <p className="text-[12px] leading-relaxed text-neutral-500 dark:text-neutral-400 whitespace-pre-wrap">
           {content}

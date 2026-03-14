@@ -20,9 +20,7 @@ fn toggle_window(app: &tauri::AppHandle) {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
         } else {
-            if window.move_window(Position::TrayCenter).is_err() {
-                let _ = window.move_window(Position::Center);
-            }
+            let _ = window.move_window(Position::Center);
             let _ = window.show();
             let _ = window.set_focus();
         }
@@ -197,6 +195,7 @@ pub fn run() {
                 .inner_size(460.0, 400.0)
                 .resizable(false)
                 .decorations(false)
+                .transparent(true)
                 .always_on_top(true)
                 .skip_taskbar(true)
                 .visible(false)
