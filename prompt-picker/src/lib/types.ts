@@ -26,3 +26,21 @@ export type FocusContext = "results" | "staging";
 export interface UsageData {
   [path: string]: { count: number; lastUsed: string };
 }
+
+export interface ResolvedChain {
+  items: ChainItem[];
+  errors: ChainError[];
+}
+
+export interface ChainItem {
+  path: string;
+  repo: string;
+  name: string;
+  auto: boolean;
+}
+
+export interface ChainError {
+  type: "cycle" | "missing";
+  message: string;
+  paths: string[];
+}

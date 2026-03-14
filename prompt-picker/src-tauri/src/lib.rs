@@ -1,5 +1,6 @@
 mod config;
 mod indexer;
+mod resolver;
 
 use std::sync::{Arc, Mutex};
 use tauri::{
@@ -119,6 +120,16 @@ fn rescan(state: tauri::State<'_, AppState>) -> Result<Vec<indexer::Prompt>, Str
     Ok(prompts)
 }
 
+#[tauri::command]
+fn get_resolved_chain(
+    path: String,
+    repo: String,
+    state: tauri::State<'_, AppState>,
+) -> resolver::ResolvedChain {
+    let prompts = state.prompts.lock().unwrap().clone();
+    resolver::resolve_chain(&path, &repo, &prompts)
+}
+
 pub fn run() {
     let cfg = config::ensure_config().expect("Failed to load config");
     let shortcut = parse_shortcut(&cfg.shortcut)
@@ -153,7 +164,8 @@ pub fn run() {
             get_config,
             open_config,
             get_prompts,
-            rescan
+            rescan,
+            get_resolved_chain
         ])
         .setup(move |app| {
             let _window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
