@@ -1,4 +1,4 @@
-# prompt-utils
+# prompt-picker
 
 A macOS menubar utility for composing LLM prompts from reusable components. Press a keyboard shortcut, search your prompt library, select and combine pieces, and get the result on your clipboard — ready to paste.
 
@@ -6,7 +6,7 @@ Built for people who maintain prompt collections as markdown files (works great 
 
 ## How it works
 
-You keep your prompts as `.md` files in one or more folders on disk. prompt-utils indexes them, lets you search and select components, resolves dependencies between them, and copies the combined result to your clipboard.
+You keep your prompts as `.md` files in one or more folders on disk. prompt-picker indexes them, lets you search and select components, resolves dependencies between them, and copies the combined result to your clipboard.
 
 **Open the picker** — press `Cmd+Shift+P` (configurable) or click the menubar icon.
 
@@ -30,7 +30,7 @@ Dependencies resolve transitively and are deduplicated. You always see the full 
 
 ### Prompt frontmatter
 
-prompt-utils uses standard YAML frontmatter that's fully compatible with Obsidian:
+prompt-picker uses standard YAML frontmatter that's fully compatible with Obsidian:
 
 ```yaml
 ---
@@ -62,7 +62,7 @@ Files without any frontmatter are still indexed and selectable — they just app
 
 ### From releases
 
-Download the latest `.dmg` from [Releases](../../releases), open it, and drag prompt-utils to your Applications folder.
+Download the latest `.dmg` from [Releases](../../releases), open it, and drag prompt-picker to your Applications folder.
 
 ### From source
 
@@ -73,8 +73,8 @@ Requirements:
 - [bun](https://bun.sh/)
 
 ```bash
-git clone https://github.com/yourname/prompt-utils.git
-cd prompt-utils
+git clone https://github.com/yourname/prompt-picker.git
+cd prompt-picker
 bun install
 bun tauri build
 ```
@@ -89,10 +89,10 @@ bun tauri dev
 
 ## Configuration
 
-On first launch, prompt-utils creates a config file at:
+On first launch, prompt-picker creates a config file at:
 
 ```
-~/.config/prompt-utils/config.toml
+~/.config/prompt-picker/config.toml
 ```
 
 Edit it to point to your prompt folders:
@@ -134,7 +134,7 @@ The picker is designed to be used entirely from the keyboard.
 
 ## How prompts are organized
 
-prompt-utils scans all `.md` files recursively in your configured folders. It groups them into three tiers:
+prompt-picker scans all `.md` files recursively in your configured folders. It groups them into three tiers:
 
 1. **Pinned** — prompts with `pinned: true` in frontmatter. Always at the top.
 2. **Frequent** — automatically tracked by usage count. The more you use a prompt, the higher it ranks.
@@ -153,7 +153,7 @@ The app is ~5 MB, uses no Chromium, and has near-zero idle resource usage.
 
 ## Tray icon
 
-prompt-utils lives in your macOS menubar with no dock icon. Right-click the tray icon for:
+prompt-picker lives in your macOS menubar with no dock icon. Right-click the tray icon for:
 
 - **Open config** — opens `config.toml` in your default editor
 - **Reload** — rescans all prompt folders
