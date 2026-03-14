@@ -1,12 +1,18 @@
 mod config;
+mod indexer;
 
+use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Manager, WebviewUrl, WebviewWindowBuilder,
+    Emitter, Manager, WebviewUrl, WebviewWindowBuilder,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_positioner::{Position, WindowExt};
+
+struct AppState {
+    prompts: Arc<Mutex<Vec<indexer::Prompt>>>,
+}
 
 fn toggle_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -22,7 +28,6 @@ fn toggle_window(app: &tauri::AppHandle) {
     }
 }
 
-/// Parse a shortcut string like "Cmd+Shift+P" into a Shortcut struct
 fn parse_shortcut(shortcut_str: &str) -> Option<Shortcut> {
     let parts: Vec<&str> = shortcut_str.split('+').collect();
     if parts.is_empty() {
@@ -101,10 +106,31 @@ fn open_config() -> Result<(), String> {
     config::open_config_file()
 }
 
+#[tauri::command]
+fn get_prompts(state: tauri::State<'_, AppState>) -> Vec<indexer::Prompt> {
+    state.prompts.lock().unwrap().clone()
+}
+
+#[tauri::command]
+fn rescan(state: tauri::State<'_, AppState>) -> Result<Vec<indexer::Prompt>, String> {
+    let cfg = config::load_config()?;
+    let prompts = indexer::scan(&cfg);
+    *state.prompts.lock().unwrap() = prompts.clone();
+    Ok(prompts)
+}
+
 pub fn run() {
     let cfg = config::ensure_config().expect("Failed to load config");
     let shortcut = parse_shortcut(&cfg.shortcut)
         .unwrap_or_else(|| Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyP));
+
+    // Initial scan
+    let prompts = indexer::scan(&cfg);
+    println!("Indexed {} prompts", prompts.len());
+
+    let state = AppState {
+        prompts: Arc::new(Mutex::new(prompts)),
+    };
 
     let expected_shortcut = shortcut.clone();
 
@@ -122,9 +148,14 @@ pub fn run() {
                 })
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![get_config, open_config])
+        .manage(state)
+        .invoke_handler(tauri::generate_handler![
+            get_config,
+            open_config,
+            get_prompts,
+            rescan
+        ])
         .setup(move |app| {
-            // Create the popup window (hidden initially)
             let _window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("Prompt Picker")
                 .inner_size(460.0, 400.0)
@@ -135,10 +166,8 @@ pub fn run() {
                 .visible(false)
                 .build()?;
 
-            // Register global shortcut from config
             app.global_shortcut().register(shortcut)?;
 
-            // Build tray menu
             let open_config_i =
                 MenuItem::with_id(app, "open_config", "Open Config", true, None::<&str>)?;
             let reload_i =
@@ -154,18 +183,25 @@ pub fn run() {
             let menu =
                 Menu::with_items(app, &[&open_config_i, &reload_i, &about_i, &quit_i])?;
 
-            // Build tray icon
+            let app_handle_for_reload = app.handle().clone();
             let _tray = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .show_menu_on_left_click(false)
-                .on_menu_event(|app, event| match event.id.as_ref() {
+                .on_menu_event(move |app, event| match event.id.as_ref() {
                     "open_config" => {
                         let _ = config::open_config_file();
                     }
                     "reload" => {
-                        // Phase 3: will trigger rescan
-                        println!("Reload clicked");
+                        if let Ok(cfg) = config::load_config() {
+                            let prompts = indexer::scan(&cfg);
+                            if let Some(state) =
+                                app_handle_for_reload.try_state::<AppState>()
+                            {
+                                *state.prompts.lock().unwrap() = prompts.clone();
+                                let _ = app_handle_for_reload.emit("prompts-changed", &prompts);
+                            }
+                        }
                     }
                     "about" => {
                         println!("Prompt Picker v0.1.0");
@@ -189,10 +225,9 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Start config file watcher
+            // Start watchers
             config::watch_config(app.handle().clone());
-
-            println!("Config loaded: {:?}", cfg);
+            indexer::watch_repos(&cfg, app.handle().clone());
 
             Ok(())
         })
