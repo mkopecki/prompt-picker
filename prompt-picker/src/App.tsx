@@ -28,6 +28,7 @@ import { useKeyboard } from "./hooks/useKeyboard";
 import SearchBar from "./components/SearchBar";
 import ResultsList from "./components/ResultsList";
 import StagingArea from "./components/StagingArea";
+import PreviewPane from "./components/PreviewPane";
 import HintBar from "./components/HintBar";
 import "./index.css";
 
@@ -67,6 +68,7 @@ function App() {
   const [focusContext, setFocusContext] = useState<FocusContext>("results");
   const [stagingHighlight, setStagingHighlight] = useState(0);
   const [wordCount, setWordCount] = useState(0);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { sections, flatResults } = useSearch(prompts, searchText, usageData);
@@ -146,6 +148,32 @@ function App() {
       setWordCount(total);
     });
   }, [stagedItems]);
+
+  // Load preview content for the currently highlighted item
+  useEffect(() => {
+    if (stagedItems.length === 0) {
+      setPreviewContent(null);
+      return;
+    }
+
+    let target: { path: string; repo: string } | null = null;
+
+    if (focusContext === "results" && flatResults[highlightIndex]) {
+      target = flatResults[highlightIndex];
+    } else if (focusContext === "staging" && stagedItems[stagingHighlight]) {
+      const staged = stagedItems[stagingHighlight];
+      target = { path: staged.path, repo: staged.repo };
+    }
+
+    if (target) {
+      const { path, repo } = target;
+      getPromptContent(path, repo)
+        .then(setPreviewContent)
+        .catch(() => setPreviewContent(null));
+    } else {
+      setPreviewContent(null);
+    }
+  }, [focusContext, highlightIndex, stagingHighlight, stagedItems, flatResults]);
 
   const handleToggleStage = useCallback(
     async (prompt: Prompt) => {
@@ -281,13 +309,16 @@ function App() {
         />
       </div>
       {stagedItems.length > 0 && (
-        <StagingArea
-          items={stagedItems}
-          highlightIndex={stagingHighlight}
-          isActive={focusContext === "staging"}
-          errors={chainErrors}
-          onRemove={handleRemoveStaged}
-        />
+        <>
+          <StagingArea
+            items={stagedItems}
+            highlightIndex={stagingHighlight}
+            isActive={focusContext === "staging"}
+            errors={chainErrors}
+            onRemove={handleRemoveStaged}
+          />
+          <PreviewPane content={previewContent} />
+        </>
       )}
       <HintBar
         stagedCount={stagedItems.length}

@@ -32,6 +32,14 @@ export default function HintBar({
             add
           </span>
         </span>
+        {stagedCount > 0 && (
+          <span className="flex items-center gap-1">
+            <KeyBadge label="⇧↑↓" />
+            <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              reorder
+            </span>
+          </span>
+        )}
         <span className="flex items-center gap-1">
           <KeyBadge label="⏎" />
           <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
