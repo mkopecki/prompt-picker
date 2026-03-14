@@ -1,8 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
-import { getPrompts, getResolvedChain } from "./lib/commands";
-import type { Prompt, UsageData, FocusContext, ResolvedChain, ChainError } from "./lib/types";
+import { load } from "@tauri-apps/plugin-store";
+import {
+  getPrompts,
+  getResolvedChain,
+  getPromptContent,
+  getConfig,
+  copyToClipboard,
+} from "./lib/commands";
+import type {
+  Prompt,
+  UsageData,
+  FocusContext,
+  ResolvedChain,
+  ChainError,
+} from "./lib/types";
 import {
   addToStaging,
   removeFromStaging,
@@ -18,11 +31,34 @@ import StagingArea from "./components/StagingArea";
 import HintBar from "./components/HintBar";
 import "./index.css";
 
+async function loadUsageData(): Promise<UsageData> {
+  const store = await load("usage.json");
+  const entries = await store.entries<{ count: number; lastUsed: string }>();
+  const data: UsageData = {};
+  for (const [key, value] of entries) {
+    if (value && typeof value === "object" && "count" in value) {
+      data[key] = value;
+    }
+  }
+  return data;
+}
+
+async function recordUsage(paths: string[]): Promise<void> {
+  const store = await load("usage.json");
+  for (const path of paths) {
+    const entry = await store.get<{ count: number; lastUsed: string }>(path);
+    await store.set(path, {
+      count: (entry?.count ?? 0) + 1,
+      lastUsed: new Date().toISOString(),
+    });
+  }
+}
+
 function App() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [searchText, setSearchText] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
-  const [usageData] = useState<UsageData>({});
+  const [usageData, setUsageData] = useState<UsageData>({});
   const [stagedItems, setStagedItems] = useState<StagedItem[]>([]);
   const [chainCache, setChainCache] = useState<Map<string, ResolvedChain>>(
     new Map(),
@@ -30,6 +66,7 @@ function App() {
   const [chainErrors, setChainErrors] = useState<ChainError[]>([]);
   const [focusContext, setFocusContext] = useState<FocusContext>("results");
   const [stagingHighlight, setStagingHighlight] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { sections, flatResults } = useSearch(prompts, searchText, usageData);
@@ -40,16 +77,16 @@ function App() {
     setHighlightIndex(0);
   }, [searchText]);
 
-  // Load prompts on mount
+  // Load prompts and usage data on mount
   useEffect(() => {
     getPrompts().then(setPrompts);
+    loadUsageData().then(setUsageData);
   }, []);
 
   // Listen for prompts-changed events
   useEffect(() => {
     const unlisten = listen<Prompt[]>("prompts-changed", (event) => {
       setPrompts(event.payload);
-      // Invalidate chain cache when prompts change
       setChainCache(new Map());
     });
     return () => {
@@ -83,7 +120,7 @@ function App() {
     };
   }, []);
 
-  // Clamp staging highlight when items are removed
+  // Clamp staging highlight and switch focus when staging empties
   useEffect(() => {
     if (stagingHighlight >= stagedItems.length && stagedItems.length > 0) {
       setStagingHighlight(stagedItems.length - 1);
@@ -93,13 +130,33 @@ function App() {
     }
   }, [stagedItems.length, stagingHighlight, focusContext]);
 
+  // Update word count when staging changes
+  useEffect(() => {
+    if (stagedItems.length === 0) {
+      setWordCount(0);
+      return;
+    }
+    Promise.all(
+      stagedItems.map((item) => getPromptContent(item.path, item.repo)),
+    ).then((contents) => {
+      const total = contents
+        .join(" ")
+        .split(/\s+/)
+        .filter(Boolean).length;
+      setWordCount(total);
+    });
+  }, [stagedItems]);
+
   const handleToggleStage = useCallback(
     async (prompt: Prompt) => {
       if (isStaged(stagedItems, prompt.path)) {
-        setStagedItems(removeFromStaging(stagedItems, prompt.path, chainCache));
+        setStagedItems(
+          removeFromStaging(stagedItems, prompt.path, chainCache),
+        );
       } else {
         const cached = chainCache.get(prompt.path);
-        const chain = cached ?? await getResolvedChain(prompt.path, prompt.repo);
+        const chain =
+          cached ?? (await getResolvedChain(prompt.path, prompt.repo));
         if (!cached) {
           setChainCache((prev) => new Map(prev).set(prompt.path, chain));
         }
@@ -112,9 +169,62 @@ function App() {
     [stagedItems, chainCache],
   );
 
-  const handleCopyAndClose = useCallback(() => {
-    // Phase 6: clipboard implementation
-  }, []);
+  const handleCopyAndClose = useCallback(async () => {
+    let itemsToCopy: StagedItem[];
+
+    if (stagedItems.length > 0) {
+      itemsToCopy = stagedItems;
+    } else if (flatResults.length > 0 && flatResults[highlightIndex]) {
+      const highlighted = flatResults[highlightIndex];
+      itemsToCopy = [
+        {
+          path: highlighted.path,
+          repo: highlighted.repo,
+          name: highlighted.name,
+          auto: false,
+          addedBy: null,
+        },
+      ];
+    } else {
+      return;
+    }
+
+    // Fetch content for each item
+    const contents: string[] = [];
+    for (const item of itemsToCopy) {
+      const content = await getPromptContent(item.path, item.repo);
+      contents.push(content);
+    }
+
+    // Get separator from config
+    const config = await getConfig();
+    const joined = contents.join(config.separator);
+
+    // Copy to clipboard
+    await copyToClipboard(joined);
+
+    // Record usage
+    const paths = itemsToCopy.map((i) => i.path);
+    await recordUsage(paths);
+
+    // Update local usage data
+    setUsageData((prev) => {
+      const next = { ...prev };
+      for (const path of paths) {
+        next[path] = {
+          count: (next[path]?.count ?? 0) + 1,
+          lastUsed: new Date().toISOString(),
+        };
+      }
+      return next;
+    });
+
+    // Clear and hide
+    setStagedItems([]);
+    setSearchText("");
+    setChainErrors([]);
+    getCurrentWindow().hide();
+  }, [stagedItems, flatResults, highlightIndex]);
 
   const handleRemoveStaged = useCallback(
     (path: string) => {
@@ -182,7 +292,7 @@ function App() {
       <HintBar
         stagedCount={stagedItems.length}
         totalPromptCount={prompts.length}
-        wordCount={0}
+        wordCount={wordCount}
       />
     </div>
   );

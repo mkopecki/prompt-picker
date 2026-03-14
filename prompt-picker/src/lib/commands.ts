@@ -23,3 +23,14 @@ export async function getResolvedChain(
 ): Promise<ResolvedChain> {
   return invoke<ResolvedChain>("get_resolved_chain", { path, repo });
 }
+
+export async function getPromptContent(
+  path: string,
+  repo: string,
+): Promise<string> {
+  return invoke<string>("get_prompt_content", { path, repo });
+}
+
+export async function copyToClipboard(text: string): Promise<void> {
+  return invoke("copy_to_clipboard", { text });
+}

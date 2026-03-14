@@ -130,6 +130,28 @@ fn get_resolved_chain(
     resolver::resolve_chain(&path, &repo, &prompts)
 }
 
+#[tauri::command]
+fn get_prompt_content(path: String, repo: String) -> Result<String, String> {
+    let cfg = config::load_config()?;
+    let repo_config = cfg
+        .repos
+        .iter()
+        .find(|r| r.name == repo)
+        .ok_or_else(|| format!("Repo not found: {repo}"))?;
+    let full_path = config::expand_path(&repo_config.path).join(&path);
+    let content = std::fs::read_to_string(&full_path)
+        .map_err(|e| format!("Failed to read {}: {e}", full_path.display()))?;
+    Ok(indexer::strip_frontmatter(&content))
+}
+
+#[tauri::command]
+fn copy_to_clipboard(app: tauri::AppHandle, text: String) -> Result<(), String> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    app.clipboard()
+        .write_text(text)
+        .map_err(|e| e.to_string())
+}
+
 pub fn run() {
     let cfg = config::ensure_config().expect("Failed to load config");
     let shortcut = parse_shortcut(&cfg.shortcut)
@@ -165,7 +187,9 @@ pub fn run() {
             open_config,
             get_prompts,
             rescan,
-            get_resolved_chain
+            get_resolved_chain,
+            get_prompt_content,
+            copy_to_clipboard
         ])
         .setup(move |app| {
             let _window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())

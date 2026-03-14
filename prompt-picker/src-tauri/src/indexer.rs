@@ -207,8 +207,6 @@ pub fn watch_repos(config: &Config, app_handle: AppHandle) {
 }
 
 /// Strip YAML frontmatter from content, returning just the body text trimmed.
-/// Used by get_prompt_content command in Phase 6.
-#[allow(dead_code)]
 pub fn strip_frontmatter(content: &str) -> String {
     match extract_frontmatter(content) {
         Some((_, body)) => body.trim().to_string(),
