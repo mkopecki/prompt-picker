@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { listen } from "@tauri-apps/api/event";
 import { load } from "@tauri-apps/plugin-store";
@@ -8,9 +9,12 @@ import {
   getPromptContent,
   getConfig,
   copyToClipboard,
+  rescan,
+  openConfig,
 } from "./lib/commands";
 import type {
   Prompt,
+  Config,
   UsageData,
   FocusContext,
   ResolvedChain,
@@ -29,8 +33,39 @@ import SearchBar from "./components/SearchBar";
 import ResultsList from "./components/ResultsList";
 import StagingArea from "./components/StagingArea";
 import PreviewPane from "./components/PreviewPane";
+import EmptyState from "./components/EmptyState";
 import HintBar from "./components/HintBar";
 import "./index.css";
+
+class ErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(): { hasError: boolean } {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-[460px] min-h-[200px] bg-white dark:bg-neutral-800 rounded-xl border-[0.5px] border-neutral-200/50 dark:border-neutral-700/50 shadow-2xl flex items-center justify-center p-8">
+          <div className="text-center">
+            <p className="text-sm text-neutral-500">Something went wrong.</p>
+            <p className="text-[12px] text-neutral-400 mt-1">
+              Press Esc to close.
+            </p>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 async function loadUsageData(): Promise<UsageData> {
   const store = await load("usage.json");
@@ -55,8 +90,9 @@ async function recordUsage(paths: string[]): Promise<void> {
   }
 }
 
-function App() {
+function AppContent() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [config, setConfig] = useState<Config | null>(null);
   const [searchText, setSearchText] = useState("");
   const [highlightIndex, setHighlightIndex] = useState(0);
   const [usageData, setUsageData] = useState<UsageData>({});
@@ -79,9 +115,10 @@ function App() {
     setHighlightIndex(0);
   }, [searchText]);
 
-  // Load prompts and usage data on mount
+  // Load prompts, config, and usage data on mount
   useEffect(() => {
     getPrompts().then(setPrompts);
+    getConfig().then(setConfig);
     loadUsageData().then(setUsageData);
   }, []);
 
@@ -95,6 +132,26 @@ function App() {
       unlisten.then((fn) => fn());
     };
   }, []);
+
+  // Listen for config-changed events
+  useEffect(() => {
+    const unlisten = listen<Config>("config-changed", (event) => {
+      setConfig(event.payload);
+      rescan().then(setPrompts);
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  // Remove staged items whose files no longer exist
+  useEffect(() => {
+    const promptPaths = new Set(prompts.map((p) => p.path));
+    const filtered = stagedItems.filter((item) => promptPaths.has(item.path));
+    if (filtered.length !== stagedItems.length) {
+      setStagedItems(filtered);
+    }
+  }, [prompts, stagedItems]);
 
   // Hide window on blur
   useEffect(() => {
@@ -297,16 +354,26 @@ function App() {
         />
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-2">
-        <ResultsList
-          sections={sections}
-          flatResults={flatResults}
-          searchText={searchText}
-          highlightIndex={highlightIndex}
-          stagedPaths={stagedPaths}
-          usageData={usageData}
-          onSelect={handleToggleStage}
-          onHighlight={setHighlightIndex}
-        />
+        {config && config.repos.length === 0 ? (
+          <EmptyState
+            title="No prompt folders configured"
+            subtitle="Edit ~/.config/prompt-picker/config.toml"
+            onAction={() => openConfig()}
+          />
+        ) : prompts.length === 0 && !searchText ? (
+          <EmptyState title="No prompts found in configured folders." />
+        ) : (
+          <ResultsList
+            sections={sections}
+            flatResults={flatResults}
+            searchText={searchText}
+            highlightIndex={highlightIndex}
+            stagedPaths={stagedPaths}
+            usageData={usageData}
+            onSelect={handleToggleStage}
+            onHighlight={setHighlightIndex}
+          />
+        )}
       </div>
       {stagedItems.length > 0 && (
         <>
@@ -326,6 +393,14 @@ function App() {
         wordCount={wordCount}
       />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }
 
