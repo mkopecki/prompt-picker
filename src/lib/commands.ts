@@ -34,3 +34,7 @@ export async function getPromptContent(
 export async function copyToClipboard(text: string): Promise<void> {
   return invoke("copy_to_clipboard", { text });
 }
+
+export async function restorePreviousFocus(): Promise<void> {
+  return invoke("restore_previous_focus");
+}

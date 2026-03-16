@@ -29,3 +29,6 @@ walkdir = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-positioner = { version = "2", features = ["tray-icon"] }
 tauri-plugin-single-instance = "2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "0.2"

@@ -11,6 +11,7 @@ import {
   copyToClipboard,
   rescan,
   openConfig,
+  restorePreviousFocus,
 } from "./lib/commands";
 import type {
   Prompt,
@@ -304,10 +305,11 @@ function AppContent() {
       return next;
     });
 
-    // Clear and hide
+    // Clear and hide, restoring focus to the previously active app
     setStagedItems([]);
     setSearchText("");
     setChainErrors([]);
+    await restorePreviousFocus();
     getCurrentWindow().hide();
   }, [stagedItems, flatResults, highlightIndex]);
 

@@ -2,6 +2,7 @@ mod config;
 mod indexer;
 mod resolver;
 
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::{
     menu::{Menu, MenuItem},
@@ -15,12 +16,91 @@ struct AppState {
     prompts: Arc<Mutex<Vec<indexer::Prompt>>>,
 }
 
+/// PID of the app that was frontmost before we showed our window.
+static PREVIOUS_APP_PID: AtomicI32 = AtomicI32::new(-1);
+
+#[cfg(target_os = "macos")]
+mod macos_focus {
+    use objc::runtime::{Class, Object};
+    use objc::{msg_send, sel, sel_impl};
+
+    pub fn get_frontmost_pid() -> Option<i32> {
+        unsafe {
+            let cls = Class::get("NSWorkspace")?;
+            let workspace: *mut Object = msg_send![cls, sharedWorkspace];
+            let app: *mut Object = msg_send![workspace, frontmostApplication];
+            if app.is_null() {
+                return None;
+            }
+            let pid: i32 = msg_send![app, processIdentifier];
+            Some(pid)
+        }
+    }
+
+    pub fn activate_pid(pid: i32) {
+        unsafe {
+            if let Some(cls) = Class::get("NSRunningApplication") {
+                let app: *mut Object =
+                    msg_send![cls, runningApplicationWithProcessIdentifier: pid];
+                if !app.is_null() {
+                    // NSApplicationActivateAllWindows | NSApplicationActivateIgnoringOtherApps
+                    let _: bool = msg_send![app, activateWithOptions: 3u64];
+                }
+            }
+        }
+    }
+}
+
+/// Center the window on whichever monitor currently contains the mouse cursor.
+fn center_on_active_screen(window: &tauri::WebviewWindow) {
+    if let Ok(cursor) = window.cursor_position() {
+        if let Ok(monitors) = window.available_monitors() {
+            for monitor in &monitors {
+                let pos = monitor.position();
+                let size = monitor.size();
+                let left = pos.x as f64;
+                let top = pos.y as f64;
+                let right = left + size.width as f64;
+                let bottom = top + size.height as f64;
+
+                if cursor.x >= left && cursor.x < right && cursor.y >= top && cursor.y < bottom {
+                    let win_size = window
+                        .outer_size()
+                        .unwrap_or(tauri::PhysicalSize {
+                            width: 460,
+                            height: 400,
+                        });
+                    let x = pos.x + (size.width as i32 - win_size.width as i32) / 2;
+                    let y = pos.y + (size.height as i32 - win_size.height as i32) / 2;
+                    let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
+                    return;
+                }
+            }
+        }
+    }
+    // Fallback: use the positioner plugin's center (primary monitor)
+    let _ = window.move_window(Position::Center);
+}
+
 fn toggle_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
         if window.is_visible().unwrap_or(false) {
             let _ = window.hide();
+            #[cfg(target_os = "macos")]
+            {
+                let pid = PREVIOUS_APP_PID.load(Ordering::Relaxed);
+                if pid > 0 {
+                    macos_focus::activate_pid(pid);
+                }
+            }
         } else {
-            let _ = window.move_window(Position::Center);
+            #[cfg(target_os = "macos")]
+            {
+                if let Some(pid) = macos_focus::get_frontmost_pid() {
+                    PREVIOUS_APP_PID.store(pid, Ordering::Relaxed);
+                }
+            }
+            center_on_active_screen(&window);
             let _ = window.show();
             let _ = window.set_focus();
         }
@@ -150,6 +230,17 @@ fn copy_to_clipboard(app: tauri::AppHandle, text: String) -> Result<(), String> 
         .map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn restore_previous_focus() {
+    #[cfg(target_os = "macos")]
+    {
+        let pid = PREVIOUS_APP_PID.load(Ordering::Relaxed);
+        if pid > 0 {
+            macos_focus::activate_pid(pid);
+        }
+    }
+}
+
 pub fn run() {
     let cfg = config::ensure_config().expect("Failed to load config");
     let shortcut = parse_shortcut(&cfg.shortcut)
@@ -187,7 +278,8 @@ pub fn run() {
             rescan,
             get_resolved_chain,
             get_prompt_content,
-            copy_to_clipboard
+            copy_to_clipboard,
+            restore_previous_focus
         ])
         .setup(move |app| {
             let _window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
