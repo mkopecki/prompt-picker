@@ -12,6 +12,7 @@ import {
   rescan,
   openConfig,
   restorePreviousFocus,
+  getVersion,
 } from "./lib/commands";
 import type {
   Prompt,
@@ -36,6 +37,7 @@ import StagingArea from "./components/StagingArea";
 import PreviewPane from "./components/PreviewPane";
 import EmptyState from "./components/EmptyState";
 import HintBar from "./components/HintBar";
+import ShortcutsCard from "./components/ShortcutsCard";
 import "./index.css";
 
 class ErrorBoundary extends Component<
@@ -106,6 +108,8 @@ function AppContent() {
   const [stagingHighlight, setStagingHighlight] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [version, setVersion] = useState("");
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const { sections, flatResults } = useSearch(prompts, searchText, usageData);
@@ -121,6 +125,7 @@ function AppContent() {
     getPrompts().then(setPrompts);
     getConfig().then(setConfig);
     loadUsageData().then(setUsageData);
+    getVersion().then(setVersion);
   }, []);
 
   // Listen for prompts-changed events
@@ -172,6 +177,7 @@ function AppContent() {
     const appWindow = getCurrentWindow();
     const unlisten = appWindow.onFocusChanged(({ payload: focused }) => {
       if (focused) {
+        setShowShortcuts(false);
         setTimeout(() => searchInputRef.current?.focus(), 50);
       }
     });
@@ -334,6 +340,8 @@ function AppContent() {
     flatResults,
     stagedItems,
     stagingHighlight,
+    showShortcuts,
+    setShowShortcuts,
     setHighlightIndex,
     setSearchText,
     setStagingHighlight,
@@ -376,44 +384,55 @@ function AppContent() {
           onChange={setSearchText}
         />
       </div>
-      <div className="flex-1 overflow-y-auto px-3 py-2">
-        {config && config.repos.length === 0 ? (
-          <EmptyState
-            title="No prompt folders configured"
-            subtitle="Edit ~/.config/prompt-picker/config.toml"
-            onAction={() => openConfig()}
-          />
-        ) : prompts.length === 0 && !searchText ? (
-          <EmptyState title="No prompts found in configured folders." />
-        ) : (
-          <ResultsList
-            sections={sections}
-            flatResults={flatResults}
-            searchText={searchText}
-            highlightIndex={highlightIndex}
-            stagedPaths={stagedPaths}
-            usageData={usageData}
-            onSelect={handleToggleStage}
-            onHighlight={setHighlightIndex}
-          />
-        )}
-      </div>
-      {stagedItems.length > 0 && (
+      {showShortcuts ? (
+        <div className="flex-1 overflow-y-auto py-2">
+          <ShortcutsCard shortcut={config?.shortcut ?? "Cmd+Shift+P"} />
+        </div>
+      ) : (
         <>
-          <StagingArea
-            items={stagedItems}
-            highlightIndex={stagingHighlight}
-            isActive={focusContext === "staging"}
-            errors={chainErrors}
-            onRemove={handleRemoveStaged}
-          />
-          <PreviewPane content={previewContent} />
+          <div className="flex-1 overflow-y-auto px-3 py-2">
+            {config && config.repos.length === 0 ? (
+              <EmptyState
+                title="No prompt folders configured"
+                subtitle="Edit ~/.config/prompt-picker/config.toml"
+                onAction={() => openConfig()}
+              />
+            ) : prompts.length === 0 && !searchText ? (
+              <EmptyState title="No prompts found in configured folders." />
+            ) : (
+              <ResultsList
+                sections={sections}
+                flatResults={flatResults}
+                searchText={searchText}
+                highlightIndex={highlightIndex}
+                stagedPaths={stagedPaths}
+                usageData={usageData}
+                onSelect={handleToggleStage}
+                onHighlight={setHighlightIndex}
+              />
+            )}
+          </div>
+          {stagedItems.length > 0 && (
+            <>
+              <StagingArea
+                items={stagedItems}
+                highlightIndex={stagingHighlight}
+                isActive={focusContext === "staging"}
+                errors={chainErrors}
+                onRemove={handleRemoveStaged}
+              />
+              <PreviewPane content={previewContent} />
+            </>
+          )}
         </>
       )}
       <HintBar
         stagedCount={stagedItems.length}
         totalPromptCount={prompts.length}
         wordCount={wordCount}
+        searchText={searchText}
+        version={version}
+        showShortcuts={showShortcuts}
       />
     </div>
   );

@@ -38,3 +38,7 @@ export async function copyToClipboard(text: string): Promise<void> {
 export async function restorePreviousFocus(): Promise<void> {
   return invoke("restore_previous_focus");
 }
+
+export async function getVersion(): Promise<string> {
+  return invoke<string>("get_version");
+}

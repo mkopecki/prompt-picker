@@ -16,6 +16,17 @@ struct AppState {
     prompts: Arc<Mutex<Vec<indexer::Prompt>>>,
 }
 
+fn app_version() -> &'static str {
+    const CONF: &str = include_str!("../tauri.conf.json");
+    static VERSION: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    VERSION.get_or_init(|| {
+        serde_json::from_str::<serde_json::Value>(CONF)
+            .ok()
+            .and_then(|v| v["version"].as_str().map(String::from))
+            .unwrap_or_else(|| "0.0.0".to_string())
+    })
+}
+
 /// PID of the app that was frontmost before we showed our window.
 static PREVIOUS_APP_PID: AtomicI32 = AtomicI32::new(-1);
 
@@ -231,6 +242,11 @@ fn copy_to_clipboard(app: tauri::AppHandle, text: String) -> Result<(), String> 
 }
 
 #[tauri::command]
+fn get_version() -> String {
+    format!("v{}", app_version())
+}
+
+#[tauri::command]
 fn restore_previous_focus() {
     #[cfg(target_os = "macos")]
     {
@@ -279,7 +295,8 @@ pub fn run() {
             get_resolved_chain,
             get_prompt_content,
             copy_to_clipboard,
-            restore_previous_focus
+            restore_previous_focus,
+            get_version
         ])
         .setup(move |app| {
             let _window = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
@@ -302,7 +319,7 @@ pub fn run() {
             let about_i = MenuItem::with_id(
                 app,
                 "about",
-                "About Prompt Picker",
+                &format!("About Prompt Picker v{}", app_version()),
                 true,
                 None::<&str>,
             )?;
@@ -331,7 +348,7 @@ pub fn run() {
                         }
                     }
                     "about" => {
-                        println!("Prompt Picker v0.1.0");
+                        println!("Prompt Picker v{}", app_version());
                     }
                     "quit" => {
                         app.exit(0);

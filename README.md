@@ -118,19 +118,35 @@ The app watches this file and reloads automatically when you save changes.
 
 ## Keyboard shortcuts
 
-The picker is designed to be used entirely from the keyboard.
+The picker is designed to be used entirely from the keyboard. Press `?` with an empty search bar to see these inside the app.
 
-| Key                 | Action                                                   |
-| ------------------- | -------------------------------------------------------- |
-| `↑` `↓`             | Navigate the results list                                |
-| `Tab`               | Add/remove highlighted item to staging area              |
-| `Enter`             | Copy staged content to clipboard and close               |
-| `Esc`               | Clear search (first press) / close window (second press) |
-| `Cmd+C`             | Clear all (search text + staged items)                   |
-| `Shift+↑` `Shift+↓` | Reorder items in the staging area                        |
-| `Cmd+↓`             | Switch focus to staging area                             |
-| `Cmd+↑`             | Switch focus back to results                             |
-| `#tagname`          | Filter by tag (type in search bar)                       |
+**General**
+
+| Key              | Action                                                   |
+| ---------------- | -------------------------------------------------------- |
+| `Cmd+Shift+P`    | Open / close picker (configurable)                       |
+| `?`              | Toggle keyboard shortcuts reference                      |
+| `Esc`            | Clear search (first press) / close window (second press) |
+| `Enter`          | Copy staged content to clipboard and close               |
+| `Cmd+C`          | Clear all (search text + staged items)                   |
+
+**Results**
+
+| Key              | Action                                                   |
+| ---------------- | -------------------------------------------------------- |
+| `↑` `↓`          | Navigate results                                         |
+| `Tab`            | Add highlighted item to staging                          |
+| `#keyword`       | Filter by tag (type in search bar)                       |
+| `Cmd+↓`          | Jump to staging area                                     |
+
+**Staging**
+
+| Key                  | Action                                               |
+| -------------------- | ---------------------------------------------------- |
+| `↑` `↓`              | Navigate staged items                                |
+| `Shift+↑` `Shift+↓`  | Reorder item                                         |
+| `Shift+Tab`           | Remove item                                          |
+| `Cmd+↑`              | Jump to results                                      |
 
 ## How prompts are organized
 

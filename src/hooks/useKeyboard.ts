@@ -11,6 +11,8 @@ interface UseKeyboardParams {
   flatResults: Prompt[];
   stagedItems: StagedItem[];
   stagingHighlight: number;
+  showShortcuts: boolean;
+  setShowShortcuts: (v: boolean) => void;
   setHighlightIndex: (i: number) => void;
   setSearchText: (s: string) => void;
   setStagingHighlight: (i: number) => void;
@@ -31,6 +33,8 @@ export function useKeyboard({
   flatResults,
   stagedItems,
   stagingHighlight,
+  showShortcuts,
+  setShowShortcuts,
   setHighlightIndex,
   setSearchText,
   setStagingHighlight,
@@ -45,6 +49,29 @@ export function useKeyboard({
 }: UseKeyboardParams) {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
+      // Toggle shortcuts card with ? when search is empty
+      if (e.key === "?" && !searchText) {
+        e.preventDefault();
+        setShowShortcuts(!showShortcuts);
+        return;
+      }
+
+      // Dismiss shortcuts card on navigation/action keys
+      if (showShortcuts) {
+        if (e.key === "Escape" || e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "Tab" || e.key === "Enter") {
+          e.preventDefault();
+          setShowShortcuts(false);
+          return;
+        }
+        // Printable char: dismiss and fall through to focus search
+        if (e.key.length === 1 && !e.metaKey && !e.ctrlKey) {
+          setShowShortcuts(false);
+          // fall through to focus-search logic below
+        } else {
+          return;
+        }
+      }
+
       // Always ensure search input has focus for typing
       if (
         e.key.length === 1 &&
@@ -168,6 +195,8 @@ export function useKeyboard({
     flatResults,
     stagedItems,
     stagingHighlight,
+    showShortcuts,
+    setShowShortcuts,
     setHighlightIndex,
     setSearchText,
     setStagingHighlight,
