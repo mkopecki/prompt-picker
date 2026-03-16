@@ -1,4 +1,6 @@
 docs/
+CLAUDE.md
+
 # Logs
 logs
 *.log
@@ -23,3 +25,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
