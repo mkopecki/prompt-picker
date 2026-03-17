@@ -32,13 +32,13 @@ function StagedRow({
           : "bg-neutral-50 dark:bg-neutral-700/50"
       }`}
     >
-      <span className="text-[11px] text-neutral-400 dark:text-neutral-500 w-4 shrink-0 text-right">
+      <span className="text-[11px] text-neutral-500 dark:text-neutral-400 w-4 shrink-0 text-right">
         {index + 1}
       </span>
       <span
         className={`flex-1 text-[12px] truncate ${
           item.auto
-            ? "text-neutral-400 dark:text-neutral-500"
+            ? "text-neutral-500 dark:text-neutral-400"
             : "text-neutral-900 dark:text-neutral-100 font-medium"
         }`}
       >
@@ -47,7 +47,7 @@ function StagedRow({
       <span
         className={`text-[10px] px-1.5 py-0.5 rounded ${
           item.auto
-            ? "text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-neutral-600/50"
+            ? "text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-600/50"
             : "text-blue-500 bg-blue-50 dark:bg-blue-900/30"
         }`}
       >
@@ -73,10 +73,10 @@ export default function StagingArea({
 
       {/* Header */}
       <div className="flex items-center justify-between px-1 py-1">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
           Clipboard Staging
         </span>
-        <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+        <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
           {items.length} component{items.length !== 1 ? "s" : ""}
         </span>
       </div>

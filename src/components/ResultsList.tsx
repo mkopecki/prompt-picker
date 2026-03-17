@@ -38,7 +38,7 @@ function IndicatorDot({
   return (
     <div
       className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-        isFirstClass ? "bg-blue-500" : "bg-neutral-300 dark:bg-neutral-600 opacity-40"
+        isFirstClass ? "bg-blue-500" : "bg-neutral-400 dark:bg-neutral-500 opacity-40"
       }`}
     />
   );
@@ -73,7 +73,7 @@ function RightBadge({
 
   if (sectionTitle === "PINNED" && prompt.hasExtends) {
     return (
-      <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
         +{prompt.extendsCount} deps
       </span>
     );
@@ -82,7 +82,7 @@ function RightBadge({
   if (sectionTitle === "FREQUENT") {
     const count = usageData[prompt.path]?.count ?? 0;
     return (
-      <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
         {count}x
       </span>
     );
@@ -137,7 +137,7 @@ function ResultRow({
         className={`flex-1 text-[13px] truncate ${
           isFirstClass
             ? "text-neutral-900 dark:text-neutral-100"
-            : "text-neutral-400 dark:text-neutral-500"
+            : "text-neutral-500 dark:text-neutral-400"
         } ${isHighlighted ? "font-medium" : "font-normal"}`}
       >
         {isFirstClass ? prompt.name : prompt.path}
@@ -154,7 +154,7 @@ function ResultRow({
 
 function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="px-1 pt-1 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+    <div className="px-1 pt-1 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
       {title}
     </div>
   );
@@ -172,7 +172,7 @@ export default function ResultsList({
 }: ResultsListProps) {
   if (flatResults.length === 0) {
     return (
-      <div className="py-8 text-center text-sm text-neutral-400 dark:text-neutral-500">
+      <div className="py-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
         {searchText
           ? `No matches for '${searchText}'`
           : "No prompts found"}

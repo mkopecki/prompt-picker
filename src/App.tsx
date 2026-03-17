@@ -59,8 +59,8 @@ class ErrorBoundary extends Component<
       return (
         <div className="w-[460px] min-h-[200px] bg-white dark:bg-neutral-800 rounded-xl border-[0.5px] border-neutral-200/50 dark:border-neutral-700/50 shadow-2xl flex items-center justify-center p-8">
           <div className="text-center">
-            <p className="text-sm text-neutral-500">Something went wrong.</p>
-            <p className="text-[12px] text-neutral-400 mt-1">
+            <p className="text-sm text-neutral-600 dark:text-neutral-300">Something went wrong.</p>
+            <p className="text-[12px] text-neutral-500 dark:text-neutral-400 mt-1">
               Press Esc to close.
             </p>
           </div>

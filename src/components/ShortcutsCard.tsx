@@ -39,12 +39,12 @@ export default function ShortcutsCard({ shortcut }: ShortcutsCardProps) {
     <div className="px-3 pt-3">
       {sections.map((section, si) => (
         <div key={section.title} className={si > 0 ? "mt-4" : ""}>
-          <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-1">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1">
             {section.title}
           </div>
           {section.rows.map((row, ri) => (
             <div key={ri} className="flex items-baseline py-[5px]">
-              <span className="w-[140px] text-right font-mono text-[12px] text-neutral-400 dark:text-neutral-500 shrink-0">
+              <span className="w-[140px] text-right font-mono text-[12px] text-neutral-500 dark:text-neutral-400 shrink-0">
                 {row.key === null ? shortcut : row.key}
               </span>
               <span className="text-[12px] text-neutral-900 dark:text-neutral-100 ml-3">

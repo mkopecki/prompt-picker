@@ -9,7 +9,7 @@ interface HintBarProps {
 
 function KeyBadge({ label }: { label: string }) {
   return (
-    <span className="inline-block text-[11px] font-mono px-1 py-0.5 rounded bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400 border border-neutral-200/50 dark:border-neutral-600/50">
+    <span className="inline-block text-[11px] font-mono px-1 py-0.5 rounded bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300 border border-neutral-200/50 dark:border-neutral-600/50">
       {label}
     </span>
   );
@@ -31,7 +31,7 @@ export default function HintBar({
         {showShortcuts ? (
           <span className="flex items-center gap-1">
             <KeyBadge label="?" />
-            <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+            <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
               back to prompts
             </span>
           </span>
@@ -39,33 +39,33 @@ export default function HintBar({
           <>
             <span className="flex items-center gap-1">
               <KeyBadge label="↑↓" />
-              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 navigate
               </span>
             </span>
             <span className="flex items-center gap-1">
               <KeyBadge label="tab" />
-              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 add
               </span>
             </span>
             {stagedCount > 0 && (
               <span className="flex items-center gap-1">
                 <KeyBadge label="⇧↑↓" />
-                <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                   reorder
                 </span>
               </span>
             )}
             <span className="flex items-center gap-1">
               <KeyBadge label="⏎" />
-              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 paste
               </span>
             </span>
             <span className="flex items-center gap-1">
               <KeyBadge label="⇧⏎" />
-              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                 copy
               </span>
             </span>
@@ -74,13 +74,13 @@ export default function HintBar({
       </div>
       <div className="text-[11px]">
         {showShortcuts || isHome ? (
-          <span className="text-neutral-400 dark:text-neutral-500">
+          <span className="text-neutral-500 dark:text-neutral-400">
             {version}
           </span>
         ) : stagedCount > 0 ? (
           <span className="font-medium text-blue-500">~{wordCount} words</span>
         ) : (
-          <span className="text-neutral-400 dark:text-neutral-500">
+          <span className="text-neutral-500 dark:text-neutral-400">
             {totalPromptCount} prompts
           </span>
         )}

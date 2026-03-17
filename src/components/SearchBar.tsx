@@ -19,7 +19,7 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       >
         {/* Magnifying glass icon */}
         <svg
-          className="w-4 h-4 text-neutral-400 dark:text-neutral-500 shrink-0"
+          className="w-4 h-4 text-neutral-500 dark:text-neutral-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -38,10 +38,10 @@ const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder="Search prompts..."
-          className="flex-1 bg-transparent outline-none text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500"
+          className="flex-1 bg-transparent outline-none text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-400"
         />
 
-        <span className="shrink-0 text-[11px] font-mono px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-600 text-neutral-400 dark:text-neutral-500 border border-neutral-300/50 dark:border-neutral-500/50">
+        <span className="shrink-0 text-[11px] font-mono px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-neutral-600 text-neutral-600 dark:text-neutral-300 border border-neutral-300/50 dark:border-neutral-500/50">
           esc
         </span>
       </div>
