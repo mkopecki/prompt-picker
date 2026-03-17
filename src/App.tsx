@@ -384,7 +384,11 @@ function AppContent() {
 
   return (
     <div ref={containerRef} className="w-[460px] min-h-[200px] max-h-[600px] bg-white dark:bg-neutral-800 rounded-xl border-[0.5px] border-neutral-200/50 dark:border-neutral-700/50 shadow-2xl overflow-hidden flex flex-col">
-      <div className="px-3 pt-3">
+      <div
+        className="h-4 shrink-0 cursor-grab active:cursor-grabbing rounded-t-xl"
+        onMouseDown={() => getCurrentWindow().startDragging()}
+      />
+      <div className="px-3">
         <SearchBar
           ref={searchInputRef}
           value={searchText}
