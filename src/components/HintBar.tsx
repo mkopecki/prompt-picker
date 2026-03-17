@@ -60,7 +60,13 @@ export default function HintBar({
             <span className="flex items-center gap-1">
               <KeyBadge label="⏎" />
               <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
-                copy & close
+                paste
+              </span>
+            </span>
+            <span className="flex items-center gap-1">
+              <KeyBadge label="⇧⏎" />
+              <span className="text-[11px] text-neutral-400 dark:text-neutral-500">
+                copy
               </span>
             </span>
           </>

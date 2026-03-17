@@ -14,7 +14,7 @@ You keep your prompts as `.md` files in one or more folders on disk. prompt-pick
 
 **Select** — press `Tab` to add the highlighted prompt to the staging area. If it depends on other prompts (via `extends`), those are pulled in automatically.
 
-**Copy** — press `Enter`. All staged components are concatenated in order, frontmatter is stripped, and the result is on your clipboard.
+**Paste** — press `Enter`. All staged components are concatenated in order, frontmatter is stripped, and the result is pasted directly into the previously focused app. Press `Shift+Enter` to copy to clipboard without pasting.
 
 ### The extends system
 
@@ -127,7 +127,8 @@ The picker is designed to be used entirely from the keyboard. Press `?` with an 
 | `Cmd+Shift+P`    | Open / close picker (configurable)                       |
 | `?`              | Toggle keyboard shortcuts reference                      |
 | `Esc`            | Clear search (first press) / close window (second press) |
-| `Enter`          | Copy staged content to clipboard and close               |
+| `Enter`          | Paste into previous app and close                        |
+| `Shift+Enter`    | Copy to clipboard and close                              |
 | `Cmd+C`          | Clear all (search text + staged items)                   |
 
 **Results**
@@ -147,6 +148,12 @@ The picker is designed to be used entirely from the keyboard. Press `?` with an 
 | `Shift+↑` `Shift+↓`  | Reorder item                                         |
 | `Shift+Tab`           | Remove item                                          |
 | `Cmd+↑`              | Jump to results                                      |
+
+## Permissions
+
+prompt-picker requires the following macOS permissions:
+
+- **Accessibility** — needed for the auto-paste feature (`Enter` to paste). The app simulates a `Cmd+V` keystroke in the previously focused app, which requires accessibility access. Grant it in **System Settings > Privacy & Security > Accessibility**. Without this permission, `Enter` will copy to clipboard but the paste won't go through.
 
 ## How prompts are organized
 

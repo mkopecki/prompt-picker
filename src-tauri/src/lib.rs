@@ -60,6 +60,28 @@ mod macos_focus {
             }
         }
     }
+
+    /// Simulate Cmd+V keystroke via CGEvent to paste clipboard contents.
+    pub fn simulate_paste() {
+        use core_graphics::event::{CGEvent, CGEventFlags, CGKeyCode};
+        use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
+
+        // Virtual keycode for 'V' on macOS
+        const KV_V: CGKeyCode = 9;
+
+        let source = CGEventSource::new(CGEventSourceStateID::HIDSystemState)
+            .expect("Failed to create CGEventSource");
+
+        let key_down = CGEvent::new_keyboard_event(source.clone(), KV_V, true)
+            .expect("Failed to create key down event");
+        key_down.set_flags(CGEventFlags::CGEventFlagCommand);
+        key_down.post(core_graphics::event::CGEventTapLocation::HID);
+
+        let key_up = CGEvent::new_keyboard_event(source, KV_V, false)
+            .expect("Failed to create key up event");
+        key_up.set_flags(CGEventFlags::CGEventFlagCommand);
+        key_up.post(core_graphics::event::CGEventTapLocation::HID);
+    }
 }
 
 /// Center the window on whichever monitor currently contains the mouse cursor.
@@ -257,6 +279,26 @@ fn restore_previous_focus() {
     }
 }
 
+#[tauri::command]
+fn paste_to_app(app: tauri::AppHandle, text: String) -> Result<(), String> {
+    use tauri_plugin_clipboard_manager::ClipboardExt;
+    app.clipboard()
+        .write_text(text)
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "macos")]
+    {
+        let pid = PREVIOUS_APP_PID.load(Ordering::Relaxed);
+        if pid > 0 {
+            macos_focus::activate_pid(pid);
+            // Brief delay to let the target app gain focus before pasting
+            std::thread::sleep(std::time::Duration::from_millis(100));
+            macos_focus::simulate_paste();
+        }
+    }
+    Ok(())
+}
+
 pub fn run() {
     let cfg = config::ensure_config().expect("Failed to load config");
     let shortcut = parse_shortcut(&cfg.shortcut)
@@ -296,6 +338,7 @@ pub fn run() {
             get_prompt_content,
             copy_to_clipboard,
             restore_previous_focus,
+            paste_to_app,
             get_version
         ])
         .setup(move |app| {

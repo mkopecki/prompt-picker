@@ -17,7 +17,7 @@ interface UseKeyboardParams {
   setSearchText: (s: string) => void;
   setStagingHighlight: (i: number) => void;
   onToggleStage: (prompt: Prompt) => void;
-  onCopyAndClose: () => void;
+  onCopyAndClose: (paste: boolean) => void;
   onSwitchToStaging: () => void;
   onSwitchToResults: () => void;
   onRemoveStaged: (path: string) => void;
@@ -96,7 +96,8 @@ export function useKeyboard({
 
       if (e.key === "Enter") {
         e.preventDefault();
-        onCopyAndClose();
+        // Enter = paste into previous app, Shift+Enter = copy only
+        onCopyAndClose(!e.shiftKey);
         return;
       }
 

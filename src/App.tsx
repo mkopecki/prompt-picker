@@ -9,6 +9,7 @@ import {
   getPromptContent,
   getConfig,
   copyToClipboard,
+  pasteToApp,
   rescan,
   openConfig,
   restorePreviousFocus,
@@ -261,7 +262,7 @@ function AppContent() {
     [stagedItems, chainCache],
   );
 
-  const handleCopyAndClose = useCallback(async () => {
+  const handleCopyAndClose = useCallback(async (paste: boolean = true) => {
     let itemsToCopy: StagedItem[];
 
     if (stagedItems.length > 0) {
@@ -292,9 +293,6 @@ function AppContent() {
     const config = await getConfig();
     const joined = contents.join(config.separator);
 
-    // Copy to clipboard
-    await copyToClipboard(joined);
-
     // Record usage
     const paths = itemsToCopy.map((i) => i.path);
     await recordUsage(paths);
@@ -311,12 +309,21 @@ function AppContent() {
       return next;
     });
 
-    // Clear and hide, restoring focus to the previously active app
+    // Clear and hide
     setStagedItems([]);
     setSearchText("");
     setChainErrors([]);
-    await restorePreviousFocus();
-    getCurrentWindow().hide();
+
+    if (paste) {
+      // Copy to clipboard, restore focus, and simulate Cmd+V paste
+      await pasteToApp(joined);
+      getCurrentWindow().hide();
+    } else {
+      // Copy only — restore focus without pasting
+      await copyToClipboard(joined);
+      await restorePreviousFocus();
+      getCurrentWindow().hide();
+    }
   }, [stagedItems, flatResults, highlightIndex]);
 
   const handleRemoveStaged = useCallback(
