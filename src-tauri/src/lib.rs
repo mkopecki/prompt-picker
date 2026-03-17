@@ -405,7 +405,7 @@ pub fn run() {
                         let _ = app.clipboard().write_text(example);
                     }
                     "about" => {
-                        println!("Prompt Picker v{}", app_version());
+                        let _ = open::that("https://github.com/mkopecki/prompt-picker");
                     }
                     "quit" => {
                         app.exit(0);
