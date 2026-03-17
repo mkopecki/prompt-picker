@@ -11,6 +11,7 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 use tauri_plugin_positioner::{Position, WindowExt};
+use tauri_plugin_updater::UpdaterExt;
 
 struct AppState {
     prompts: Arc<Mutex<Vec<indexer::Prompt>>>,
@@ -319,6 +320,7 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_clipboard_manager::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, sc, event| {
@@ -429,6 +431,30 @@ pub fn run() {
             // Start watchers
             config::watch_config(app.handle().clone());
             indexer::watch_repos(&cfg, app.handle().clone());
+
+            // Background update check
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                // Delay to let the app finish starting up
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                tauri::async_runtime::block_on(async {
+                    match handle.updater() {
+                        Ok(updater) => match updater.check().await {
+                            Ok(Some(update)) => {
+                                println!("Update available: {}", update.version);
+                                if let Err(e) =
+                                    update.download_and_install(|_, _| {}, || {}).await
+                                {
+                                    eprintln!("Failed to install update: {e}");
+                                }
+                            }
+                            Ok(None) => {}
+                            Err(e) => eprintln!("Update check failed: {e}"),
+                        },
+                        Err(e) => eprintln!("Failed to create updater: {e}"),
+                    }
+                });
+            });
 
             Ok(())
         })

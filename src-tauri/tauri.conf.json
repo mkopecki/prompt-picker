@@ -27,5 +27,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDI3ODBCODE1NTU4OEE5RDgKUldUWXFZaFZGYmlBSjU0bmk2eWYzZ2NSajRYRVIyTE9EUURHQzREVFhlbmtyNDZDaXkyK3BnTHMK",
+      "endpoints": [
+        "https://github.com/mkopecki/prompt-picker/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
