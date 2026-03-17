@@ -366,9 +366,18 @@ pub fn run() {
                 true,
                 None::<&str>,
             )?;
+            let copy_frontmatter_i = MenuItem::with_id(
+                app,
+                "copy_frontmatter",
+                "Copy Example Frontmatter",
+                true,
+                None::<&str>,
+            )?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu =
-                Menu::with_items(app, &[&open_config_i, &reload_i, &about_i, &quit_i])?;
+            let menu = Menu::with_items(
+                app,
+                &[&open_config_i, &reload_i, &copy_frontmatter_i, &about_i, &quit_i],
+            )?;
 
             let app_handle_for_reload = app.handle().clone();
             let _tray = TrayIconBuilder::new()
@@ -389,6 +398,11 @@ pub fn run() {
                                 let _ = app_handle_for_reload.emit("prompts-changed", &prompts);
                             }
                         }
+                    }
+                    "copy_frontmatter" => {
+                        use tauri_plugin_clipboard_manager::ClipboardExt;
+                        let example = "---\nname: My Prompt\ntype: prompt\nextends:\n  - base-instructions\ntags:\n  - coding\n  - review\npinned: false\n---\n";
+                        let _ = app.clipboard().write_text(example);
                     }
                     "about" => {
                         println!("Prompt Picker v{}", app_version());
